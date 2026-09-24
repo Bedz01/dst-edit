@@ -55,10 +55,16 @@ export function decodeDST(arrayBuffer: ArrayBuffer): string {
 
 /**
  * Encodes XML content into DST format by flipping bits
+ *
+ * Line endings are normalised to LF first: CR has no .dst byte, and passed
+ * through raw it decodes as DEL, which breaks the file. Firefox's
+ * XMLSerializer on Windows writes CRLF after the XML declaration. XML parsers
+ * normalise line endings to LF anyway, so nothing is lost.
  */
 export function encodeDST(xmlString: string): ArrayBuffer {
   const textEncoder = new TextEncoder()
-  const view = new DataView(textEncoder.encode(xmlString).buffer)
+  const normalised = xmlString.replace(/\r\n?/g, "\n")
+  const view = new DataView(textEncoder.encode(normalised).buffer)
   for (let i = 0; i < view.byteLength; i++) {
     const byteValue = view.getUint8(i)
     const flippedValue = flipBits(byteValue, true)
